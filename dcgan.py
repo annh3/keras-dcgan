@@ -12,6 +12,7 @@ import numpy as np
 from PIL import Image
 import argparse
 import math
+import os
 
 
 def generator_model():
@@ -115,10 +116,11 @@ def train(BATCH_SIZE):
                 d.save_weights('discriminator', True)
 
 
-def generate(BATCH_SIZE, nice=False):
+def generate(BATCH_SIZE, nice=False, save_dir=''):
     g = generator_model()
     g.compile(loss='binary_crossentropy', optimizer="SGD")
     g.load_weights('generator')
+    print("I LOADED WEIGHTS FROM GENERATOR")
     if nice:
         d = discriminator_model()
         d.compile(loss='binary_crossentropy', optimizer="SGD")
@@ -139,15 +141,17 @@ def generate(BATCH_SIZE, nice=False):
     else:
         noise = np.random.uniform(-1, 1, (BATCH_SIZE, 100))
         generated_images = g.predict(noise, verbose=1)
+        print("ABOUT TO COMBINE IMAGES")
         image = combine_images(generated_images)
     image = image*127.5+127.5
     Image.fromarray(image.astype(np.uint8)).save(
-        "generated_image.png")
+        os.path.join(save_dir,"generated_image.png"))
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str)
+    parser.add_argument("--save_dir", type=str, default='')
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--nice", dest="nice", action="store_true")
     parser.set_defaults(nice=False)
@@ -159,4 +163,4 @@ if __name__ == "__main__":
     if args.mode == "train":
         train(BATCH_SIZE=args.batch_size)
     elif args.mode == "generate":
-        generate(BATCH_SIZE=args.batch_size, nice=args.nice)
+        generate(BATCH_SIZE=args.batch_size, nice=args.nice, save_dir=args.save_dir)
